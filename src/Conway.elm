@@ -137,7 +137,10 @@ neighborCount matrix cellidx =
     let cellRow = cellidx//mapSize
         cellCol = modBy mapSize cellidx
         delta = [-1, 0, 1]
-        cell_neighbors_count  = List.sum (List.map (mapDeltaRows cellRow cellCol matrix) delta)
+        cell_neighbors_count  = 
+            delta
+                |> List.map (mapDeltaRows cellRow cellCol matrix)
+                |> List.sum 
         cellVal = Maybe.withDefault 0 (get cellidx matrix)
     in
 
@@ -153,12 +156,14 @@ neighborCount matrix cellidx =
 
 mapDeltaRows : Int -> Int -> List Int -> Int -> Int
 mapDeltaRows row column matrix deltaRow = 
-    let delta = [-1, 0, 1]
+    let result = [-1, 0, 1]
+            |> List.map (mapDeltaCols row column matrix deltaRow)
+            |> List.foldl (+) 0 
     in
-    List.foldl (+) 0 (List.map (mapDeltaCols deltaRow row column matrix) delta)
+    result
 
-mapDeltaCols : Int -> Int -> Int -> List Int -> Int -> Int
-mapDeltaCols delta_row row column model delta_col =
+mapDeltaCols : Int -> Int -> List Int -> Int-> Int -> Int
+mapDeltaCols row column model delta_row delta_col =
     let neighbor_row = modBy mapSize (row + delta_row)
         neighbor_col = modBy mapSize (column + delta_col)
         idx = (neighbor_row*mapSize) + neighbor_col
