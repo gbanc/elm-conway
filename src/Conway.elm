@@ -131,15 +131,21 @@ life : List Int -> List Int
 life model =
     List.map (neighborCount model) (range 0 (mapSize*mapSize))
 
+getDeltaPermutations delta = 
+    delta 
+    |> List.map (\n-> List.map (\i->(i, n)) delta )
+    |> List.concat 
+    
 
 neighborCount : List Int -> Int -> Int
 neighborCount matrix cellidx =
     let cellRow = cellidx//mapSize
         cellCol = modBy mapSize cellidx
         delta = [-1, 0, 1]
+        permutations = getDeltaPermutations delta
         cell_neighbors_count  = 
-            delta
-                |> List.map (mapDeltaRows cellRow cellCol matrix)
+            permutations
+                |> List.map (mapDeltas cellRow cellCol matrix)
                 |> List.sum 
         cellVal = Maybe.withDefault 0 (get cellidx matrix)
     in
@@ -154,16 +160,8 @@ neighborCount matrix cellidx =
         then 0
     else 0
 
-mapDeltaRows : Int -> Int -> List Int -> Int -> Int
-mapDeltaRows row column matrix deltaRow = 
-    let result = [-1, 0, 1]
-            |> List.map (mapDeltaCols row column matrix deltaRow)
-            |> List.foldl (+) 0 
-    in
-    result
-
-mapDeltaCols : Int -> Int -> List Int -> Int-> Int -> Int
-mapDeltaCols row column model delta_row delta_col =
+mapDeltas : Int -> Int -> List Int -> (Int, Int) -> Int
+mapDeltas row column model (delta_row, delta_col) =
     let neighbor_row = modBy mapSize (row + delta_row)
         neighbor_col = modBy mapSize (column + delta_col)
         idx = (neighbor_row*mapSize) + neighbor_col
