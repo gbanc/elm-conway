@@ -78,12 +78,6 @@ mapListByIndex cellpos pos val =
         else 0
     else val
 
-generateRow : List Int
-generateRow = 
-    let
-        rangelist = range 1 mapSize
-    in
-    List.map (\n -> 0) rangelist
 
 getBackgroundColor : Int -> String
 getBackgroundColor celval =
@@ -104,7 +98,10 @@ toHtmlText counter cellindex cellval  =
 toTableRow :  List Int -> Int -> Html Msg
 toTableRow longlist counter =
     let
-        limitlist = List.drop (mapSize*(counter+1) - mapSize) (List.take (mapSize*(counter+1)) longlist)
+        limitlist = 
+            longlist 
+                |> List.take (mapSize*(counter+1))
+                |> List.drop (mapSize*(counter+1) - mapSize)
     in
     
     if (List.length limitlist == mapSize) then
