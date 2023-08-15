@@ -7,19 +7,46 @@ import Html.Events exposing (..)
 import List exposing (range)
 import List exposing (indexedMap)
 import Html exposing (datalist)
-import Array
+import Time
+import Task
 
 
 -- MAIN
 
 main =
-    Browser.sandbox { init = init, update=update, view = view}
+    Browser.element { init = init, update=update, view = view, subscriptions=subscriptions}
 
 mapSize = 32
 
-init = List.map (\n -> 0) (range 1 (mapSize*mapSize))
 
-type Msg = NewGeneration | SetCellValue Int
+type alias Model =
+  { matrix : List Int
+  , time : Time.Posix
+  , generate: Bool
+  }
+
+init : () -> (Model, Cmd Msg)
+init _ =
+  ( Model generateInitialMatrix (Time.millisToPosix 0) False
+  , Cmd.none
+  )
+
+generateInitialMatrix : List Int
+generateInitialMatrix = List.map (\n -> 0) (range 1 (mapSize*mapSize))
+
+type Msg = 
+     NewGeneration Int 
+    | SetCellValue Int 
+    | GenerateX Bool
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Time.every 1 (\n-> if (model.generate==True) then NewGeneration 1 else NewGeneration 0)
 
 
 
@@ -29,12 +56,19 @@ updateMatrix : Int -> List Int -> List Int
 updateMatrix cellpos matrix =
     List.indexedMap (mapListByIndex cellpos) matrix
 
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NewGeneration ->
-      life model
+    GenerateX x ->
+        ({model | generate=x}, Cmd.none)
+    NewGeneration x ->
+      case x of
+          1 -> ({model | matrix=(life model.matrix)}, Cmd.none)
+          0 -> ({ model | matrix=model.matrix}, Cmd.none)
+          _ -> update (NewGeneration (x - 1)) ({model| matrix=life model.matrix})
+          
     SetCellValue cellpos ->
-      updateMatrix cellpos model
+      ({model | matrix=updateMatrix cellpos model.matrix}, Cmd.none)
 
 
 
@@ -81,11 +115,12 @@ toTableRow longlist counter =
     else 
         text ""
         
-view : List Int -> Html Msg
+view : Model -> Html Msg
 view model =
   div []
-    [ button [ onClick NewGeneration ] [ text "-" ]
-    , table [] (List.map (toTableRow model) (range 0 (mapSize - 1)))
+    [ button [ onClick (NewGeneration 1)] [ text "New Generation" ]
+    , button [ onClick (GenerateX (not model.generate)) ] [ text "Start/Stop Generations" ]
+    , table [] (List.map (toTableRow model.matrix) (range 0 (mapSize - 1)))
     ]
 
 
@@ -95,7 +130,8 @@ view model =
 life : List Int -> List Int
 life model =
     List.map (neighborCount model) (range 0 (mapSize*mapSize))
-        
+
+
 neighborCount : List Int -> Int -> Int
 neighborCount matrix cellidx =
     let cellRow = cellidx//mapSize
