@@ -1,14 +1,11 @@
 module Conway exposing (..)
 
 import Browser
-import Html exposing (Html, text, pre, div, table, button)
+import Html exposing (Html, text, div, table, button)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import List exposing (range)
-import List exposing (indexedMap)
-import Html exposing (datalist)
 import Time
-import Task
 
 
 -- MAIN
@@ -16,6 +13,7 @@ import Task
 main =
     Browser.element { init = init, update=update, view = view, subscriptions=subscriptions}
 
+mapSize : Int
 mapSize = 32
 
 
@@ -81,6 +79,7 @@ mapListByIndex cellpos pos val =
         else 0
     else val
 
+generateRow : List Int
 generateRow = 
     let
         rangelist = range 1 mapSize
@@ -131,10 +130,11 @@ life : List Int -> List Int
 life model =
     List.map (neighborCount model) (range 0 (mapSize*mapSize))
 
+getDeltaPermutations : List Int -> List (Int, Int)
 getDeltaPermutations delta = 
     delta 
-    |> List.map (\n-> List.map (\i->(i, n)) delta )
-    |> List.concat 
+        |> List.map (\n-> List.map (\i->(i, n)) delta )
+        |> List.concat 
     
 
 neighborCount : List Int -> Int -> Int
@@ -160,6 +160,7 @@ neighborCount matrix cellidx =
         then 0
     else 0
 
+
 mapDeltas : Int -> Int -> List Int -> (Int, Int) -> Int
 mapDeltas row column model (delta_row, delta_col) =
     let neighbor_row = modBy mapSize (row + delta_row)
@@ -171,6 +172,7 @@ mapDeltas row column model (delta_row, delta_col) =
         0
     else
         Maybe.withDefault 0 (get idx model)
+
 get : Int -> List Int -> Maybe Int       
 get n xs  = List.head (List.drop n xs)
 
