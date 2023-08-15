@@ -62,8 +62,7 @@ update msg model =
     NewGeneration x ->
       case x of
           1 -> ({model | matrix=(life model.matrix)}, Cmd.none)
-          0 -> ({ model | matrix=model.matrix}, Cmd.none)
-          _ -> update (NewGeneration (x - 1)) ({model| matrix=life model.matrix})
+          _ -> (model, Cmd.none)
           
     SetCellValue cellpos ->
       ({model | matrix=updateMatrix cellpos model.matrix}, Cmd.none)
@@ -128,7 +127,7 @@ view model =
 
 life : List Int -> List Int
 life model =
-    List.map (neighborCount model) (range 0 (mapSize*mapSize))
+    List.map (livesOrDies model) (range 0 (mapSize*mapSize))
 
 getDeltaPermutations : List Int -> List (Int, Int)
 getDeltaPermutations delta = 
@@ -137,8 +136,8 @@ getDeltaPermutations delta =
         |> List.concat 
     
 
-neighborCount : List Int -> Int -> Int
-neighborCount matrix cellidx =
+livesOrDies : List Int -> Int -> Int
+livesOrDies matrix cellidx =
     let cellRow = cellidx//mapSize
         cellCol = modBy mapSize cellidx
         delta = [-1, 0, 1]
