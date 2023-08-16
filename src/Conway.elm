@@ -6,6 +6,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import List exposing (range)
 import Time
+import Random
 
 
 -- MAIN
@@ -14,7 +15,7 @@ main =
     Browser.element { init = init, update=update, view = view, subscriptions=subscriptions}
 
 mapSize : Int
-mapSize = 32
+mapSize = 38
 
 
 type alias Model =
@@ -36,6 +37,7 @@ type Msg =
      NewGeneration Int 
     | SetCellValue Int 
     | GenerateX Bool
+    | AddRandomGosperGun
 
 
 
@@ -45,27 +47,6 @@ type Msg =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Time.every 1 (\n-> if (model.generate==True) then NewGeneration 1 else NewGeneration 0)
-
-
-
--- UPDATE 
-
-updateMatrix : Int -> List Int -> List Int
-updateMatrix cellpos matrix =
-    List.indexedMap (mapListByIndex cellpos) matrix
-
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
-  case msg of
-    GenerateX x ->
-        ({model | generate=x}, Cmd.none)
-    NewGeneration x ->
-      case x of
-          1 -> ({model | matrix=(life model.matrix)}, Cmd.none)
-          _ -> (model, Cmd.none)
-          
-    SetCellValue cellpos ->
-      ({model | matrix=updateMatrix cellpos model.matrix}, Cmd.none)
 
 
 
@@ -115,10 +96,40 @@ view model =
   div []
     [ button [ onClick (NewGeneration 1)] [ text "New Generation" ]
     , button [ onClick (GenerateX (not model.generate)) ] [ text "Start/Stop Generations" ]
+    , button [ onClick (AddRandomGosperGun) ] [ text "Add random Gosper Gun" ]
     , table [] (List.map (toTableRow model.matrix) (range 0 (mapSize - 1)))
     ]
 
 
+
+-- UPDATE 
+
+updateMatrix : Int -> List Int -> List Int
+updateMatrix cellpos matrix =
+    List.indexedMap (mapListByIndex cellpos) matrix
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    AddRandomGosperGun ->
+        let
+            randomInt = roll
+            truncateMatrix = List.drop (mapSize + (List.length getGosperGun)) model.matrix
+        in
+        ({model | matrix = List.concat [getGosperGun, truncateMatrix]}, Cmd.none)
+    GenerateX x ->
+        ({model | generate=x}, Cmd.none)
+    NewGeneration x ->
+      case x of
+          1 -> ({model | matrix=(life model.matrix)}, Cmd.none)
+          _ -> (model, Cmd.none)
+
+    SetCellValue cellpos ->
+      ({model | matrix=updateMatrix cellpos model.matrix}, Cmd.none)
+
+roll : Random.Generator Int
+roll =
+  Random.int 1 6
 
 -- CREATE LIFE
 
@@ -173,3 +184,22 @@ get : Int -> List Int -> Maybe Int
 get n xs  = List.head (List.drop n xs)
 
 
+getGosperGun : List Int
+getGosperGun =
+    let gun = """
+.........................O............
+.......................O.O............
+.............OO......OO............OO.
+............O...O....OO............OO.
+.OO........O.....O...OO...............
+.OO........O...O.OO....O.O............
+...........O.....O.......O............
+............O...O.....................
+.............OO......................."""
+    in
+
+    gun 
+        |> String.toList
+        |> List.map String.fromChar 
+        |> List.filter (\n -> n /= "\n")
+        |> List.map (\n->if ( n==".") then 0 else if ( n=="O") then 1 else 0)
